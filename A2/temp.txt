@@ -1,0 +1,80 @@
+" 
+    canEta [
+        "can eta returns 0 if eta reduction is not possible, depth if possible"
+        |expr lastExpr hadKey|
+        lastExpr := self.
+        expr := body.
+        [expr isVar] whileFalse: [
+            "as long as we havn't hit a variable on the right yet"
+            expr ifVar: [
+                self error: 'traverse failed!'
+            ] ifAbs: [
+                lastExpr := expr.
+                expr := expr body.
+            ] ifApp: [
+                lastExpr := expr.
+                expr := expr rand.
+            ] 
+        ].
+        "we are now always on a var"
+        (expr name) = var ifFalse: [
+            "if the name doesn't match, then not possible to eta reduce"
+            ^ 0
+        ] ifTrue: [
+            "if the name matches, we need to check if in rest of the body, see if somehow x is a free variable"
+            expr := expr substitute: var with: '_'. "pick a temp value that would never show up"
+            free := body freeVars.
+            hadKey := free includesKey: var.
+            expr substitute: '_' with: var.
+
+            hadKey ifTrue: [
+                "cannot be reduced since it contains something bad"
+                 ^ 0
+            ] ifFalse: [
+                ^ depth   
+            ]
+        ]
+    ] "
+
+
+    tryEta: depth [
+        "can eta returns 0 if eta reduction is not possible, depth if possible"
+        |expr lastExpr hadKey free|
+        lastExpr := self.
+        expr := body.
+        [expr isVar] whileFalse: [
+            "as long as we havn't hit a variable on the right yet"
+            expr ifVar: [
+                self error: 'traverse failed!'
+            ] ifAbs: [
+                lastExpr := expr.
+                expr := expr body.
+            ] ifApp: [
+                lastExpr := expr.
+                expr := expr rand.
+            ] 
+        ].
+        "we are now always on a var"
+        (expr name) = var ifFalse: [
+            "if the name doesn't match, then not possible to eta reduce"
+            ^ 0
+        ] ifTrue: [
+            "if the name matches, we need to check if in rest of the body, see if somehow x is a free variable"
+            lastExpr isApp ifTrue: [
+                expr init: '_'. "pick a temp value that would never show up"
+                free := body freeVars.
+                hadKey := free includesKey: var.
+                expr init: var.
+                hadKey ifTrue: [
+                    "cannot be reduced since it contains something bad"
+                    ^ 0
+                ] ifFalse: [
+                    ^ depth   
+                ]
+            ] ifFalse: [
+                "cannot be reduced since it contains something bad"
+                ^0 
+            ]
+
+        ]
+    ] 
